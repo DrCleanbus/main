@@ -4,7 +4,7 @@ import type { Request, Response, NextFunction } from "express";
 import { connectorConfig } from "./config.js";
 import { createConnectorServer } from "./server.js";
 
-const app = createMcpExpressApp();
+const app = createMcpExpressApp({ host: "0.0.0.0" });
 const port = Number(process.env.PORT ?? 3000);
 
 app.get("/health", (_req, res) =>
@@ -57,6 +57,6 @@ app.delete("/mcp", authorize, (_req, res) =>
   }),
 );
 
-app.listen(port, () =>
+app.listen(port, "0.0.0.0", () =>
   console.log(`HighLevel MCP server listening on port ${port}`),
 );
