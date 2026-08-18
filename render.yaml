@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: dr-clean-highlevel-mcp
+    runtime: docker
+    healthCheckPath: /health
+    envVars:
+      - key: GHL_ACCESS_TOKEN
+        sync: false
+      - key: GHL_COMPANY_ID
+        value: 9HJFXQQikPtptu9jS3oU
+      - key: GHL_LOCATION_ID
+        value: xvujd8xeHJe8UokuTLFU
+      - key: GHL_BASE_URL
+        value: https://services.leadconnectorhq.com
+      - key: MCP_SERVER_API_KEY
+        generateValue: true
