@@ -1,11 +1,5 @@
 # Torq CRM – Dr. Clean HighLevel MCP connector
 
-This stdio MCP server adds safe HighLevel user and calendar operations without embedding connection credentials.
-
-## Configuration
-
-Supply secrets through the deployment's secret store. `GHL_ACCESS_TOKEN` is required. `GHL_COMPANY_ID`, `GHL_LOCATION_ID`, and `GHL_BASE_URL` are optional connection defaults. The token requires `users.readonly`, `calendars.readonly`, and `calendars.write` scopes.
-
 ```sh
 npm ci
 npm run build
