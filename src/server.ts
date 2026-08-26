@@ -15,7 +15,7 @@ export function createConnectorServer(options: {
   const defaultLocationId = options.locationId;
   const server = new McpServer({
     name: "torq-crm-dr-clean-highlevel",
-    version: "1.1.0",
+    version: "1.2.0",
   });
   const readAnnotations = {
     readOnlyHint: true,
@@ -201,7 +201,7 @@ export function createConnectorServer(options: {
   );
 
   server.registerTool(
-    "change_calendar_slot_duration",
+    "update_calendar_service_time",
     {
       description:
         "Safely preview or change one calendar's slot duration. The expected value provides optimistic concurrency protection; the reason is returned for the caller's audit trail.",
