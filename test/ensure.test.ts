@@ -6,6 +6,7 @@ import {
   type HighLevelApi,
 } from "../src/client.js";
 import { ensureUserOnMatchingCalendars } from "../src/ensure.js";
+import { changeCalendarSlotDuration } from "../src/slot-duration.js";
 import type { Calendar, TeamMember, User } from "../src/types.js";
 
 class FakeApi implements HighLevelApi {
@@ -39,6 +40,12 @@ class FakeApi implements HighLevelApi {
     calendar.teamMembers = this.corrupt
       ? members.slice(1)
       : structuredClone(members);
+    return { calendar };
+  }
+  async updateCalendarSlotDuration(id: string, slotDuration: number) {
+    this.writes++;
+    const calendar = this.calendars.find((c) => c.id === id)!;
+    calendar.slotDuration = this.corrupt ? slotDuration + 5 : slotDuration;
     return { calendar };
   }
 }
@@ -178,4 +185,72 @@ test("maps documented upstream errors to structured codes without token disclosu
         error.code === code && !error.message.includes("test-token-marker"),
     );
   }
+});
+
+test("slot duration change converts units, checks expectation, and verifies", async () => {
+  const target = { ...calendar("1", "Mobile"), slotDuration: 30 };
+  const api = new FakeApi([dallen], [target]);
+  const result = await changeCalendarSlotDuration(api, {
+    calendarId: "1",
+    expectedSlotDuration: 0.5,
+    expectedSlotDurationUnit: "hours",
+    proposedSlotDuration: 1,
+    proposedSlotDurationUnit: "hours",
+    dryRun: false,
+    changeReason: "Allow longer appointments",
+  });
+  assert.equal(target.slotDuration, 60);
+  assert.equal(result.changed, true);
+  assert.equal(result.verified, true);
+  assert.equal(result.changeReason, "Allow longer appointments");
+});
+
+test("slot duration dry run and stale expectation never write", async () => {
+  const api = new FakeApi(
+    [dallen],
+    [{ ...calendar("1", "Mobile"), slotDuration: 30 }],
+  );
+  const base = {
+    calendarId: "1",
+    expectedSlotDuration: 30,
+    expectedSlotDurationUnit: "minutes" as const,
+    proposedSlotDuration: 45,
+    proposedSlotDurationUnit: "minutes" as const,
+    changeReason: "Scheduling policy",
+  };
+  const preview = await changeCalendarSlotDuration(api, {
+    ...base,
+    dryRun: true,
+  });
+  assert.equal(preview.changed, false);
+  assert.equal(api.writes, 0);
+  await assert.rejects(
+    changeCalendarSlotDuration(api, {
+      ...base,
+      expectedSlotDuration: 25,
+      dryRun: false,
+    }),
+    (error: HighLevelError) => error.code === "EXPECTED_SLOT_DURATION_MISMATCH",
+  );
+  assert.equal(api.writes, 0);
+});
+
+test("slot duration change detects failed read-after-write verification", async () => {
+  const api = new FakeApi(
+    [dallen],
+    [{ ...calendar("1", "Mobile"), slotDuration: 30 }],
+    true,
+  );
+  await assert.rejects(
+    changeCalendarSlotDuration(api, {
+      calendarId: "1",
+      expectedSlotDuration: 30,
+      expectedSlotDurationUnit: "minutes",
+      proposedSlotDuration: 45,
+      proposedSlotDurationUnit: "minutes",
+      dryRun: false,
+      changeReason: "Scheduling policy",
+    }),
+    (error: HighLevelError) => error.code === "VERIFICATION_FAILED",
+  );
 });

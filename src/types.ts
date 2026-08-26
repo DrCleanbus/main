@@ -18,7 +18,21 @@ export interface Calendar {
   groupId?: string;
   locationId?: string;
   teamMembers?: TeamMember[];
+  slotDuration?: number;
   [key: string]: unknown;
+}
+
+export type DurationUnit = "minutes" | "hours";
+
+export interface SlotDurationChangeResult {
+  calendarId: string;
+  changeReason: string;
+  dryRun: boolean;
+  changed: boolean;
+  expectedSlotDurationMinutes: number;
+  proposedSlotDurationMinutes: number;
+  previousSlotDurationMinutes: number;
+  verified: boolean;
 }
 
 export interface User {

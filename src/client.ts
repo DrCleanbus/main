@@ -29,6 +29,10 @@ export interface HighLevelApi {
     calendarId: string,
     teamMembers: TeamMember[],
   ): Promise<{ calendar: Calendar }>;
+  updateCalendarSlotDuration(
+    calendarId: string,
+    slotDuration: number,
+  ): Promise<{ calendar: Calendar }>;
 }
 
 export class HighLevelClient implements HighLevelApi {
@@ -134,6 +138,20 @@ export class HighLevelClient implements HighLevelApi {
       `/calendars/${encodeURIComponent(calendarId)}`,
       "2021-04-15",
       { method: "PUT", body: JSON.stringify({ teamMembers }) },
+    );
+    return { calendar: result.calendar ?? result };
+  }
+
+  async updateCalendarSlotDuration(calendarId: string, slotDuration: number) {
+    if (!calendarId || !Number.isInteger(slotDuration) || slotDuration <= 0)
+      throw new HighLevelError(
+        "VALIDATION_ERROR",
+        "calendarId and a positive whole-minute slotDuration are required",
+      );
+    const result = await this.request(
+      `/calendars/${encodeURIComponent(calendarId)}`,
+      "2021-04-15",
+      { method: "PUT", body: JSON.stringify({ slotDuration }) },
     );
     return { calendar: result.calendar ?? result };
   }
