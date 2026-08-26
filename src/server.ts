@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { HighLevelClient, HighLevelError } from "./client.js";
 import { ensureUserOnMatchingCalendars } from "./ensure.js";
+import { changeCalendarSlotDuration } from "./slot-duration.js";
 
 export function createConnectorServer(options: {
   accessToken: string;
@@ -14,7 +15,7 @@ export function createConnectorServer(options: {
   const defaultLocationId = options.locationId;
   const server = new McpServer({
     name: "torq-crm-dr-clean-highlevel",
-    version: "1.0.0",
+    version: "1.1.0",
   });
   const readAnnotations = {
     readOnlyHint: true,
@@ -193,6 +194,31 @@ export function createConnectorServer(options: {
             ),
           }),
         );
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    "change_calendar_slot_duration",
+    {
+      description:
+        "Safely preview or change one calendar's slot duration. The expected value provides optimistic concurrency protection; the reason is returned for the caller's audit trail.",
+      inputSchema: {
+        calendarId: z.string().min(1),
+        expectedSlotDuration: z.number().positive(),
+        expectedSlotDurationUnit: z.enum(["minutes", "hours"]),
+        proposedSlotDuration: z.number().positive(),
+        proposedSlotDurationUnit: z.enum(["minutes", "hours"]),
+        dryRun: z.boolean(),
+        changeReason: z.string().trim().min(1),
+      },
+      annotations: writeAnnotations,
+    },
+    async (args) => {
+      try {
+        return response(await changeCalendarSlotDuration(api, args));
       } catch (error) {
         return failure(error);
       }
